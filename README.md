@@ -2,6 +2,16 @@
 
 Can leadership trust this number, and if not, exactly why?
 
+**Live dashboard: [https://careersahrafanousi-debug.github.io/kpi-trust-ledger/dashboard/](https://careersahrafanousi-debug.github.io/kpi-trust-ledger/dashboard/)**
+
+Built by [`src/build_dashboard.py`](src/build_dashboard.py) from the query set in
+[`dashboard/dashboard_config.json`](dashboard/dashboard_config.json), run against `data/kpi_trust.db`.
+Every number on the page comes out of a SQL query held in that config file, so the page
+cannot drift away from the analysis in [`sql/`](sql/) — regenerate it with
+`python src/load_sqlite.py && python src/build_dashboard.py`. Chosen over a `.pbix`
+because a reviewer can open a URL and cannot open a binary.
+
+
 Three dashboards at Lone Star Care Operations report three different backlog figures. Nobody
 can explain the gap, so leadership has stopped trusting all three. This project builds the
 governance layer that answers the question: a KPI catalog with written definitions, three
@@ -190,7 +200,9 @@ monthly governance review.
 - Only two of the three sources feed the reporting layer; a real MDM approach would be wider.
 - Exception resolution workflow is specified but not implemented, so time-to-resolve is
   structurally unmeasurable in this build. That is called out rather than hidden.
-- Power BI `.pbix` not committed; see [`docs/10_dashboard_spec.md`](docs/10_dashboard_spec.md).
+- No `.pbix` committed. The dashboard is built instead as a live HTML page at
+  [https://careersahrafanousi-debug.github.io/kpi-trust-ledger/dashboard/](https://careersahrafanousi-debug.github.io/kpi-trust-ledger/dashboard/) by `src/build_dashboard.py`; the Power BI model and
+  measure design remain specified in [`docs/10_dashboard_spec.md`](docs/10_dashboard_spec.md).
 
 ## How to run it
 
