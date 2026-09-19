@@ -1,0 +1,19 @@
+KPI_ID,KPI_Name,Source,Source_Value,Certified_Value,Variance,Unit,Tolerance,Within_Tolerance,Note
+KPI-01,Appeal Volume,case_management,6058.0,6000.0,58.0,Count,0.0,No,Raw system count includes duplicate rows created when a case is reopened; the reporting layer deduplicates.
+KPI-01,Appeal Volume,workflow_tracker,5935.0,6000.0,-65.0,Count,0.0,No,"Tracker is keyed on intake date rather than receipt date and is missing 65 rows, so volume differs on both count and period."
+KPI-01,Appeal Volume,leadership_extract,5743.0,6000.0,-257.0,Count,0.0,No,"Extract is four days stale and excludes Cancelled appeals entirely, so volume is understated."
+KPI-02,Open Backlog,case_management,611.0,423.0,188.0,Count,0.0,No,System backlog count treats Cancelled as open; the certified definition excludes Cancelled.
+KPI-02,Open Backlog,workflow_tracker,509.0,423.0,86.0,Count,0.0,No,"90 completed cases were never updated in the tracker, so they are still counted as in progress."
+KPI-02,Open Backlog,leadership_extract,211.0,423.0,-212.0,Count,0.0,No,"Cancelled appeals excluded and Reopened rolled into Closed, so backlog is understated."
+KPI-03,Median Turnaround,case_management,8.0,8.0,0.0,Days,0.25,Yes,
+KPI-03,Median Turnaround,workflow_tracker,7.0,8.0,-1.0,Days,0.25,No,"Turnaround measured from intake date rather than receipt date, understating elapsed time."
+KPI-03,Median Turnaround,leadership_extract,8.0,8.0,0.0,Days,0.25,Yes,
+KPI-04,SLA Compliance,case_management,68.7,68.7,0.0,Percent,1.0,Yes,
+KPI-04,SLA Compliance,workflow_tracker,,68.7,,Percent,1.0,N/A,KPI not available from this source
+KPI-04,SLA Compliance,leadership_extract,66.9,68.7,-1.8,Percent,1.0,No,Manual date edits inflate SLA compliance; the extract also excludes Cancelled cases from the denominator.
+KPI-05,First-Pass Routing Accuracy,case_management,,73.73,,Percent,1.0,N/A,KPI not available from this source
+KPI-05,First-Pass Routing Accuracy,workflow_tracker,74.54,73.73,0.81,Percent,1.0,Yes,
+KPI-05,First-Pass Routing Accuracy,leadership_extract,,73.73,,Percent,1.0,N/A,KPI not available from this source
+KPI-06,Rework Rate,case_management,,14.38,,Percent,1.0,N/A,KPI not available from this source
+KPI-06,Rework Rate,workflow_tracker,14.54,14.38,0.16,Percent,1.0,Yes,
+KPI-06,Rework Rate,leadership_extract,,14.38,,Percent,1.0,N/A,KPI not available from this source
