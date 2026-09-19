@@ -1,0 +1,14 @@
+pair,variance,Tolerance,Within_Tolerance
+KPI-01 · Leadership extract,-257.0,0.0,No
+KPI-02 · Leadership extract,-212.0,0.0,No
+KPI-02 · Case management,188.0,0.0,No
+KPI-02 · Workflow tracker,86.0,0.0,No
+KPI-01 · Workflow tracker,-65.0,0.0,No
+KPI-01 · Case management,58.0,0.0,No
+KPI-04 · Leadership extract,-1.8,1.0,No
+KPI-03 · Workflow tracker,-1.0,0.25,No
+KPI-05 · Workflow tracker,0.81,1.0,Yes
+KPI-06 · Workflow tracker,0.16,1.0,Yes
+KPI-03 · Case management,0.0,0.25,Yes
+KPI-03 · Leadership extract,0.0,0.25,Yes
+KPI-04 · Case management,0.0,1.0,Yes

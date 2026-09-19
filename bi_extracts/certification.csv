@@ -1,0 +1,7 @@
+KPI_ID,KPI_Name,Certified_Value,Unit,Sources_Tested,Sources_Within_Tolerance,Certified,Blocking_Reason
+KPI-01,Appeal Volume,6000.0,Count,3,0,No,One or more sources outside tolerance
+KPI-02,Open Backlog,423.0,Count,3,0,No,One or more sources outside tolerance
+KPI-03,Median Turnaround,8.0,Days,3,2,No,One or more sources outside tolerance
+KPI-04,SLA Compliance,68.7,Percent,2,1,No,One or more sources outside tolerance
+KPI-05,First-Pass Routing Accuracy,73.73,Percent,1,1,Yes,—
+KPI-06,Rework Rate,14.38,Percent,1,1,Yes,—

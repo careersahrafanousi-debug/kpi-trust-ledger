@@ -1,0 +1,6 @@
+Rule_ID,Severity,exceptions,still_open
+DQ-03,High,90,90
+DQ-02,High,65,65
+DQ-13,Medium,59,59
+DQ-01,High,58,58
+DQ-15,Critical,1,1
