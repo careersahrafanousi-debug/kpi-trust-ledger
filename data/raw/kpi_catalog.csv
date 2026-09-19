@@ -1,0 +1,7 @@
+KPI_ID,KPI_Name,Business_Definition,Formula,Owner,Authoritative_Source,Unit,Tolerance
+KPI-01,Appeal Volume,Count of appeals received in the reporting period,COUNT(Appeal_ID) WHERE Received_Date BETWEEN period start AND end,Appeals Ops Manager,Appeals case system,Count,0 variance
+KPI-02,Open Backlog,Count of appeals not closed as of the reporting date,COUNT(Appeal_ID) WHERE Status <> 'Closed' AS OF reporting date,Appeals Ops Manager,Appeals case system,Count,0 variance
+KPI-03,Median Turnaround,Median calendar days from receipt to closure for closed appeals,MEDIAN(Closed_Date - Received_Date) WHERE Status = 'Closed',Reporting Analyst,Appeals case system,Days,under 0.25 days
+KPI-04,SLA Compliance,Closed appeals meeting the SLA target divided by closed appeals,COUNT(SLA_Met = 'Yes') / COUNT(Status = 'Closed'),Quality Lead,Appeals case system,Percent,under 1 percentage point
+KPI-05,First-Pass Routing Accuracy,Appeals resolved without reassignment divided by all appeals,COUNT(Reassignment_Count = 0) / COUNT(Appeal_ID),Appeals Ops Manager,Workflow tracker,Percent,under 1 percentage point
+KPI-06,Rework Rate,Appeals requiring rework divided by all appeals,COUNT(Rework_Flag = 'Yes') / COUNT(Appeal_ID),Quality Lead,Workflow tracker,Percent,under 1 percentage point
