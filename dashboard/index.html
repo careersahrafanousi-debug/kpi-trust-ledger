@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KPI Trust Ledger</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #171d24;
+    --panel-2: #1e2630;
+    --line: #2a333f;
+    --text: #e6edf3;
+    --muted: #8b98a5;
+    --accent: #4c9aff;
+    --good: #35b77d;
+    --warn: #e0a33e;
+    --bad: #e05c5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 28px 32px 22px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #131a21, var(--bg));
+  }
+  h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.2px; }
+  .sub { color: var(--muted); font-size: 13.5px; max-width: 900px; }
+  .synthetic {
+    display: inline-block; margin-top: 12px; padding: 5px 11px; border-radius: 4px;
+    background: rgba(76,154,255,.12); border: 1px solid rgba(76,154,255,.32);
+    color: #9dc4ff; font-size: 12px; font-weight: 500;
+  }
+  main { padding: 24px 32px 56px; max-width: 1560px; margin: 0 auto; }
+  .kpis {
+    display: grid; gap: 12px; margin-bottom: 26px;
+    grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 15px 16px 14px;
+  }
+  .kpi .label {
+    color: var(--muted); font-size: 11.5px; text-transform: uppercase;
+    letter-spacing: .07em; font-weight: 600; margin-bottom: 9px;
+  }
+  .kpi .value { font-size: 27px; font-weight: 650; letter-spacing: -0.5px; line-height: 1.1; }
+  .kpi .note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .kpi.good .value { color: var(--good); }
+  .kpi.warn .value { color: var(--warn); }
+  .kpi.bad  .value { color: var(--bad); }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(12, 1fr); }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 17px 18px 14px; min-width: 0;
+  }
+  .card.w4 { grid-column: span 4; }
+  .card.w6 { grid-column: span 6; }
+  .card.w8 { grid-column: span 8; }
+  .card.w12 { grid-column: span 12; }
+  @media (max-width: 1080px) { .card.w4, .card.w6, .card.w8 { grid-column: span 12; } }
+  .card h2 { margin: 0 0 3px; font-size: 14.5px; font-weight: 620; }
+  .card .desc { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
+  .chart-wrap { position: relative; height: 290px; }
+  .chart-wrap.tall { height: 380px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+  th {
+    color: var(--muted); font-size: 11.5px; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600; white-space: nowrap;
+  }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:hover { background: var(--panel-2); }
+  .scroll { max-height: 430px; overflow-y: auto; }
+  .pill { padding: 2px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .pill.good { background: rgba(53,183,125,.15); color: var(--good); }
+  .pill.warn { background: rgba(224,163,62,.15); color: var(--warn); }
+  .pill.bad  { background: rgba(224,92,92,.15);  color: var(--bad); }
+  footer {
+    border-top: 1px solid var(--line); padding: 22px 32px 40px;
+    color: var(--muted); font-size: 12.5px; max-width: 1560px; margin: 0 auto;
+  }
+  footer p { margin: 0 0 9px; max-width: 900px; }
+  footer code {
+    background: var(--panel-2); padding: 1.5px 5px; border-radius: 3px;
+    font-size: 12px; color: #b9c6d3;
+  }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>KPI Trust Ledger</h1>
+  <p class="sub">Lone Star Care Operations (fictional) · three systems report the same appeals process and none of them agree. Backlog is 423, 611, 509 or 211 depending on which extract you open. This page reconciles 6 KPIs across 3 sources and certifies only the ones that survive the test — 2 of 6.</p>
+  <div class="synthetic">Fully synthetic data &middot; no employer, patient or confidential information</div>
+</header>
+<main>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid" id="grid"></div>
+</main>
+<footer>
+  <p><strong>How this page is built.</strong> Every value comes from a SQL query stored in
+  <code>dashboard/dashboard_config.json</code> and run against <code>data/kpi_trust.db</code> by
+  <code>src/build_dashboard.py</code>. Nothing is typed in by hand, so the dashboard cannot
+  drift away from the analysis in <code>sql/</code>. Rebuild with
+  <code>python src/load_sqlite.py &amp;&amp; python src/build_dashboard.py</code>.</p>
+  <p><strong>Limitations.</strong> Tolerance bands are set by judgement, not by a measurement-error model, so a KPI marked within tolerance is agreed, not proven correct. The certified value is the authoritative source's value — being certified means the sources agree, not that reality was observed. 5 of 18 KPI-source pairs are untestable because the source does not carry the field, and an untestable pair is neither a pass nor a fail. The data is fully synthetic.</p>
+  <p>Source: synthetic extracts generated by src/generate_sources.py, reconciled by src/reconcile.py. No employer data, patient information, protected health information or confidential business information is used.</p>
+</footer>
+<script>
+const DATA = {"headline":[{"kpis":6,"certified":2,"pairs_tested":13,"pairs_agreed":5,"recon_rate":38.5,"not_testable":0}],"vol":[{"reporting_rows":6000,"cm_rows":6058,"wt_rows":5935,"lr_rows":5743,"exceptions":273}],"certification":[{"KPI_ID":"KPI-01","KPI_Name":"Appeal Volume","Certified_Value":6000.0,"Unit":"Count","Sources_Tested":3,"Sources_Within_Tolerance":0,"Certified":"No","Blocking_Reason":"One or more sources outside tolerance"},{"KPI_ID":"KPI-02","KPI_Name":"Open Backlog","Certified_Value":423.0,"Unit":"Count","Sources_Tested":3,"Sources_Within_Tolerance":0,"Certified":"No","Blocking_Reason":"One or more sources outside tolerance"},{"KPI_ID":"KPI-03","KPI_Name":"Median Turnaround","Certified_Value":8.0,"Unit":"Days","Sources_Tested":3,"Sources_Within_Tolerance":2,"Certified":"No","Blocking_Reason":"One or more sources outside tolerance"},{"KPI_ID":"KPI-04","KPI_Name":"SLA Compliance","Certified_Value":68.7,"Unit":"Percent","Sources_Tested":2,"Sources_Within_Tolerance":1,"Certified":"No","Blocking_Reason":"One or more sources outside tolerance"},{"KPI_ID":"KPI-05","KPI_Name":"First-Pass Routing Accuracy","Certified_Value":73.73,"Unit":"Percent","Sources_Tested":1,"Sources_Within_Tolerance":1,"Certified":"Yes","Blocking_Reason":"\u2014"},{"KPI_ID":"KPI-06","KPI_Name":"Rework Rate","Certified_Value":14.38,"Unit":"Percent","Sources_Tested":1,"Sources_Within_Tolerance":1,"Certified":"Yes","Blocking_Reason":"\u2014"}],"cert_chart":[{"kpi":"KPI-01","agreed":0,"disagreed":3},{"kpi":"KPI-02","agreed":0,"disagreed":3},{"kpi":"KPI-03","agreed":2,"disagreed":1},{"kpi":"KPI-04","agreed":1,"disagreed":1},{"kpi":"KPI-05","agreed":1,"disagreed":0},{"kpi":"KPI-06","agreed":1,"disagreed":0}],"recon":[{"KPI_ID":"KPI-01","KPI_Name":"Appeal Volume","Source":"Case management","Source_Value":6058.0,"Certified_Value":6000.0,"Variance":58.0,"Unit":"Count","Tolerance":0.0,"Within_Tolerance":"No","Note":"Raw system count includes duplicate rows created when a case is reopened; the reporting layer deduplicates."},{"KPI_ID":"KPI-01","KPI_Name":"Appeal Volume","Source":"Leadership extract","Source_Value":5743.0,"Certified_Value":6000.0,"Variance":-257.0,"Unit":"Count","Tolerance":0.0,"Within_Tolerance":"No","Note":"Extract is four days stale and excludes Cancelled appeals entirely, so volume is understated."},{"KPI_ID":"KPI-01","KPI_Name":"Appeal Volume","Source":"Workflow tracker","Source_Value":5935.0,"Certified_Value":6000.0,"Variance":-65.0,"Unit":"Count","Tolerance":0.0,"Within_Tolerance":"No","Note":"Tracker is keyed on intake date rather than receipt date and is missing 65 rows, so volume differs on both count and period."},{"KPI_ID":"KPI-02","KPI_Name":"Open Backlog","Source":"Case management","Source_Value":611.0,"Certified_Value":423.0,"Variance":188.0,"Unit":"Count","Tolerance":0.0,"Within_Tolerance":"No","Note":"System backlog count treats Cancelled as open; the certified definition excludes Cancelled."},{"KPI_ID":"KPI-02","KPI_Name":"Open Backlog","Source":"Leadership extract","Source_Value":211.0,"Certified_Value":423.0,"Variance":-212.0,"Unit":"Count","Tolerance":0.0,"Within_Tolerance":"No","Note":"Cancelled appeals excluded and Reopened rolled into Closed, so backlog is understated."},{"KPI_ID":"KPI-02","KPI_Name":"Open Backlog","Source":"Workflow tracker","Source_Value":509.0,"Certified_Value":423.0,"Variance":86.0,"Unit":"Count","Tolerance":0.0,"Within_Tolerance":"No","Note":"90 completed cases were never updated in the tracker, so they are still counted as in progress."},{"KPI_ID":"KPI-03","KPI_Name":"Median Turnaround","Source":"Case management","Source_Value":8.0,"Certified_Value":8.0,"Variance":0.0,"Unit":"Days","Tolerance":0.25,"Within_Tolerance":"Yes","Note":"\u2014"},{"KPI_ID":"KPI-03","KPI_Name":"Median Turnaround","Source":"Leadership extract","Source_Value":8.0,"Certified_Value":8.0,"Variance":0.0,"Unit":"Days","Tolerance":0.25,"Within_Tolerance":"Yes","Note":"\u2014"},{"KPI_ID":"KPI-03","KPI_Name":"Median Turnaround","Source":"Workflow tracker","Source_Value":7.0,"Certified_Value":8.0,"Variance":-1.0,"Unit":"Days","Tolerance":0.25,"Within_Tolerance":"No","Note":"Turnaround measured from intake date rather than receipt date, understating elapsed time."},{"KPI_ID":"KPI-04","KPI_Name":"SLA Compliance","Source":"Case management","Source_Value":68.7,"Certified_Value":68.7,"Variance":0.0,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":"Yes","Note":"\u2014"},{"KPI_ID":"KPI-04","KPI_Name":"SLA Compliance","Source":"Leadership extract","Source_Value":66.9,"Certified_Value":68.7,"Variance":-1.8,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":"No","Note":"Manual date edits inflate SLA compliance; the extract also excludes Cancelled cases from the denominator."},{"KPI_ID":"KPI-04","KPI_Name":"SLA Compliance","Source":"Workflow tracker","Source_Value":null,"Certified_Value":68.7,"Variance":null,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":null,"Note":"KPI not available from this source"},{"KPI_ID":"KPI-05","KPI_Name":"First-Pass Routing Accuracy","Source":"Case management","Source_Value":null,"Certified_Value":73.73,"Variance":null,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":null,"Note":"KPI not available from this source"},{"KPI_ID":"KPI-05","KPI_Name":"First-Pass Routing Accuracy","Source":"Leadership extract","Source_Value":null,"Certified_Value":73.73,"Variance":null,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":null,"Note":"KPI not available from this source"},{"KPI_ID":"KPI-05","KPI_Name":"First-Pass Routing Accuracy","Source":"Workflow tracker","Source_Value":74.54,"Certified_Value":73.73,"Variance":0.81,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":"Yes","Note":"\u2014"},{"KPI_ID":"KPI-06","KPI_Name":"Rework Rate","Source":"Case management","Source_Value":null,"Certified_Value":14.38,"Variance":null,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":null,"Note":"KPI not available from this source"},{"KPI_ID":"KPI-06","KPI_Name":"Rework Rate","Source":"Leadership extract","Source_Value":null,"Certified_Value":14.38,"Variance":null,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":null,"Note":"KPI not available from this source"},{"KPI_ID":"KPI-06","KPI_Name":"Rework Rate","Source":"Workflow tracker","Source_Value":14.54,"Certified_Value":14.38,"Variance":0.16,"Unit":"Percent","Tolerance":1.0,"Within_Tolerance":"Yes","Note":"\u2014"}],"by_source":[{"Source":"Case management","pairs":6,"agreed":2,"recon_pct":50.0},{"Source":"Workflow tracker","pairs":6,"agreed":2,"recon_pct":40.0},{"Source":"Leadership extract","pairs":6,"agreed":1,"recon_pct":25.0}],"backlog":[{"source":"Certified (reporting layer)","backlog":423},{"source":"Case management export","backlog":481},{"source":"Workflow tracker","backlog":509},{"source":"Leadership extract","backlog":307}],"variance":[{"pair":"KPI-01 \u00b7 Leadership extract","variance":-257.0,"Tolerance":0.0,"Within_Tolerance":"No"},{"pair":"KPI-02 \u00b7 Leadership extract","variance":-212.0,"Tolerance":0.0,"Within_Tolerance":"No"},{"pair":"KPI-02 \u00b7 Case management","variance":188.0,"Tolerance":0.0,"Within_Tolerance":"No"},{"pair":"KPI-02 \u00b7 Workflow tracker","variance":86.0,"Tolerance":0.0,"Within_Tolerance":"No"},{"pair":"KPI-01 \u00b7 Workflow tracker","variance":-65.0,"Tolerance":0.0,"Within_Tolerance":"No"},{"pair":"KPI-01 \u00b7 Case management","variance":58.0,"Tolerance":0.0,"Within_Tolerance":"No"},{"pair":"KPI-04 \u00b7 Leadership extract","variance":-1.8,"Tolerance":1.0,"Within_Tolerance":"No"},{"pair":"KPI-03 \u00b7 Workflow tracker","variance":-1.0,"Tolerance":0.25,"Within_Tolerance":"No"},{"pair":"KPI-05 \u00b7 Workflow tracker","variance":0.81,"Tolerance":1.0,"Within_Tolerance":"Yes"},{"pair":"KPI-06 \u00b7 Workflow tracker","variance":0.16,"Tolerance":1.0,"Within_Tolerance":"Yes"},{"pair":"KPI-03 \u00b7 Case management","variance":0.0,"Tolerance":0.25,"Within_Tolerance":"Yes"},{"pair":"KPI-03 \u00b7 Leadership extract","variance":0.0,"Tolerance":0.25,"Within_Tolerance":"Yes"},{"pair":"KPI-04 \u00b7 Case management","variance":0.0,"Tolerance":1.0,"Within_Tolerance":"Yes"}],"exceptions":[{"Rule_ID":"DQ-03","Severity":"High","exceptions":90,"still_open":90},{"Rule_ID":"DQ-02","Severity":"High","exceptions":65,"still_open":65},{"Rule_ID":"DQ-13","Severity":"Medium","exceptions":59,"still_open":59},{"Rule_ID":"DQ-01","Severity":"High","exceptions":58,"still_open":58},{"Rule_ID":"DQ-15","Severity":"Critical","exceptions":1,"still_open":1}],"severity":[{"Severity":"High","exceptions":213},{"Severity":"Medium","exceptions":59},{"Severity":"Critical","exceptions":1}],"catalog":[{"KPI_ID":"KPI-01","KPI_Name":"Appeal Volume","Business_Definition":"Count of appeals received in the reporting period","Formula":"COUNT(Appeal_ID) WHERE Received_Date BETWEEN period start AND end","Authoritative_Source":"Appeals case system","Unit":"Count","Tolerance":"0 variance"},{"KPI_ID":"KPI-02","KPI_Name":"Open Backlog","Business_Definition":"Count of appeals not closed as of the reporting date","Formula":"COUNT(Appeal_ID) WHERE Status <> 'Closed' AS OF reporting date","Authoritative_Source":"Appeals case system","Unit":"Count","Tolerance":"0 variance"},{"KPI_ID":"KPI-03","KPI_Name":"Median Turnaround","Business_Definition":"Median calendar days from receipt to closure for closed appeals","Formula":"MEDIAN(Closed_Date - Received_Date) WHERE Status = 'Closed'","Authoritative_Source":"Appeals case system","Unit":"Days","Tolerance":"under 0.25 days"},{"KPI_ID":"KPI-04","KPI_Name":"SLA Compliance","Business_Definition":"Closed appeals meeting the SLA target divided by closed appeals","Formula":"COUNT(SLA_Met = 'Yes') / COUNT(Status = 'Closed')","Authoritative_Source":"Appeals case system","Unit":"Percent","Tolerance":"under 1 percentage point"},{"KPI_ID":"KPI-05","KPI_Name":"First-Pass Routing Accuracy","Business_Definition":"Appeals resolved without reassignment divided by all appeals","Formula":"COUNT(Reassignment_Count = 0) / COUNT(Appeal_ID)","Authoritative_Source":"Workflow tracker","Unit":"Percent","Tolerance":"under 1 percentage point"},{"KPI_ID":"KPI-06","KPI_Name":"Rework Rate","Business_Definition":"Appeals requiring rework divided by all appeals","Formula":"COUNT(Rework_Flag = 'Yes') / COUNT(Appeal_ID)","Authoritative_Source":"Workflow tracker","Unit":"Percent","Tolerance":"under 1 percentage point"}],"row_counts":[{"source":"Reporting layer (certified)","rows_present":6000},{"source":"Case management export","rows_present":6058},{"source":"Workflow tracker export","rows_present":5935},{"source":"Leadership reporting extract","rows_present":5743}],"monthly":[{"month":"2026-01","received":980,"still_open":17,"sla_pct":65.94},{"month":"2026-02","received":909,"still_open":15,"sla_pct":65.21},{"month":"2026-03","received":1042,"still_open":15,"sla_pct":65.92},{"month":"2026-04","received":1005,"still_open":20,"sla_pct":68.22},{"month":"2026-05","received":1042,"still_open":21,"sla_pct":66.31},{"month":"2026-06","received":1022,"still_open":335,"sla_pct":72.49}]};
+const SPEC = {"kpis":[{"label":"KPIs in catalogue","query":"headline","field":"kpis"},{"label":"KPIs certified","query":"headline","field":"certified","tone":"bad","note":"of 6 \u2014 the rest cannot be quoted"},{"label":"Reconciliation rate","query":"headline","field":"recon_rate","unit":"pct","tone":"bad","note":"13 testable KPI-source pairs"},{"label":"Pairs in agreement","query":"headline","field":"pairs_agreed","note":"of 13 testable"},{"label":"Reporting layer rows","query":"vol","field":"reporting_rows"},{"label":"Case management rows","query":"vol","field":"cm_rows","tone":"warn","note":"Same period, 58 more appeals than the certified layer"},{"label":"DQ exceptions","query":"vol","field":"exceptions","tone":"warn","note":"1 Critical, 213 High"},{"label":"Pairs not testable","query":"headline","field":"not_testable","tone":"warn","note":"Source does not carry the field \u2014 neither pass nor fail"}],"cards":[{"title":"The certification ledger","desc":"A KPI is certified only when every testable source agrees with the authoritative source inside tolerance. Four of six fail, and each carries the reason it failed rather than a footnote.","type":"table","width":12,"query":"certification","pillMap":{"Yes":"good","No":"bad"},"columns":[{"label":"KPI","field":"KPI_ID"},{"label":"Name","field":"KPI_Name"},{"label":"Certified value","field":"Certified_Value","numeric":true},{"label":"Unit","field":"Unit"},{"label":"Tested","field":"Sources_Tested","numeric":true},{"label":"Agreed","field":"Sources_Within_Tolerance","numeric":true},{"label":"Certified","field":"Certified","pill":true},{"label":"Why not","field":"Blocking_Reason"}]},{"title":"How many sources agree, per KPI","desc":"Stacked to make the shape obvious: only the two fully green bars can be quoted in a leadership deck.","type":"bar","width":6,"query":"cert_chart","label_field":"kpi","stacked":true,"series":[{"label":"Sources within tolerance","field":"agreed","colour":"good"},{"label":"Sources outside tolerance","field":"disagreed","colour":"bad"}]},{"title":"One question, four answers","desc":"Open appeals at period end, counted natively in each system. This single chart is why the project exists \u2014 nobody was wrong, they were counting different things and calling them the same word.","type":"bar","width":6,"query":"backlog","label_field":"source","rotate":20,"series":[{"label":"Open appeals reported","field":"backlog","colour":"warn"}]},{"title":"Reconciliation rate by source","desc":"The leadership extract agrees least often, which matters more than the others because it is the one executives see. It also carries the fewest fields, so fewer of its KPIs are even testable.","type":"bar","width":6,"query":"by_source","label_field":"Source","rotate":20,"series":[{"label":"Within tolerance %","field":"recon_pct","colour":"accent"}]},{"title":"Largest variances","desc":"Absolute variance between each source and the certified value, worst first. Units differ by row, so read this as a ranking of disagreement rather than a comparison of magnitudes.","type":"hbar","width":6,"query":"variance","label_field":"pair","tall":true,"series":[{"label":"Variance from certified value","field":"variance","colour":"bad"}]},{"title":"Full reconciliation detail","desc":"Every KPI-source pair tested, with its variance, the tolerance it was judged against and the note explaining untestable pairs.","type":"table","width":12,"query":"recon","pillMap":{"Yes":"good","No":"bad","Not testable":"warn"},"columns":[{"label":"KPI","field":"KPI_ID"},{"label":"Name","field":"KPI_Name"},{"label":"Source","field":"Source"},{"label":"Source value","field":"Source_Value","numeric":true},{"label":"Certified","field":"Certified_Value","numeric":true},{"label":"Variance","field":"Variance","numeric":true},{"label":"Tolerance","field":"Tolerance","numeric":true},{"label":"In tolerance","field":"Within_Tolerance","pill":true},{"label":"Note","field":"Note"}]},{"title":"Row counts by source","desc":"Before any KPI is calculated the sources already disagree on how many appeals exist. Reconciling metrics without reconciling record counts first produces confident nonsense.","type":"bar","width":6,"query":"row_counts","label_field":"source","rotate":20,"beginAtZero":false,"series":[{"label":"Rows in source","field":"rows_present","colour":"accent"}]},{"title":"Exceptions by severity","desc":"273 exceptions across the three extracts. The single Critical one blocks a KPI on its own.","type":"doughnut","width":6,"query":"severity","label_field":"Severity","series":[{"label":"Exceptions","field":"exceptions"}]},{"title":"Exceptions by rule","desc":"Which validation rule caught what, and how much is still open. An exception log with nothing open is usually a log nobody reads.","type":"table","width":6,"query":"exceptions","pillMap":{"Critical":"bad","High":"warn","Medium":"warn","Low":"good"},"columns":[{"label":"Rule","field":"Rule_ID"},{"label":"Severity","field":"Severity","pill":true},{"label":"Exceptions","field":"exceptions","numeric":true},{"label":"Still open","field":"still_open","numeric":true}]},{"title":"Certified reporting layer over time","desc":"Built from the certified layer only. Bars are appeals received on the right axis; the line is SLA compliance, a KPI that is itself uncertified and therefore shown here as a shape rather than a number to quote.","type":"bar","width":6,"query":"monthly","label_field":"month","y_title":"SLA %","y1_title":"Appeals","series":[{"label":"Appeals received","field":"received","colour":"muted","axis":"right"},{"label":"Still open","field":"still_open","colour":"warn","axis":"right"},{"label":"SLA compliance %","field":"sla_pct","as":"line","colour":"accent"}]},{"title":"The KPI catalogue","desc":"Each definition, its formula and its single authoritative source. This table is the actual deliverable \u2014 the charts above are evidence that it was needed.","type":"table","width":12,"query":"catalog","columns":[{"label":"KPI","field":"KPI_ID"},{"label":"Name","field":"KPI_Name"},{"label":"Business definition","field":"Business_Definition"},{"label":"Formula","field":"Formula"},{"label":"Authoritative source","field":"Authoritative_Source"},{"label":"Unit","field":"Unit"},{"label":"Tolerance","field":"Tolerance","numeric":true}]}]};
+
+const FONT = getComputedStyle(document.body).fontFamily;
+Chart.defaults.font.family = FONT;
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#8b98a5';
+Chart.defaults.borderColor = '#2a333f';
+Chart.defaults.plugins.legend.labels.boxWidth = 11;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.maintainAspectRatio = false;
+
+const PALETTE = ['#4c9aff','#35b77d','#e0a33e','#e05c5c','#a77bde','#3fb8c4','#d98ab8','#8b98a5'];
+const SEMANTIC = { good:'#35b77d', warn:'#e0a33e', bad:'#e05c5c', accent:'#4c9aff', muted:'#8b98a5' };
+
+function colourFor(i, spec) {
+  if (spec && spec.colour) return SEMANTIC[spec.colour] || spec.colour;
+  return PALETTE[i % PALETTE.length];
+}
+
+function fmt(v, unit) {
+  if (v === null || v === undefined) return '\u2014';
+  if (typeof v !== 'number') return v;
+  let s = Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, {maximumFractionDigits: 2});
+  if (unit === 'pct') s += '%';
+  if (unit === 'usd') s = '$' + Math.round(v).toLocaleString();
+  if (unit === 'hours') s += 'h';
+  if (unit === 'days') s += 'd';
+  return s;
+}
+
+// KPI cards
+const kpiHost = document.getElementById('kpis');
+for (const k of SPEC.kpis) {
+  const row = DATA[k.query][0];
+  const el = document.createElement('div');
+  el.className = 'kpi' + (k.tone ? ' ' + k.tone : '');
+  el.innerHTML = '<div class="label"></div><div class="value"></div>' + (k.note ? '<div class="note"></div>' : '');
+  el.querySelector('.label').textContent = k.label;
+  el.querySelector('.value').textContent = fmt(row[k.field], k.unit);
+  if (k.note) el.querySelector('.note').textContent = k.note;
+  kpiHost.appendChild(el);
+}
+
+// Cards
+const grid = document.getElementById('grid');
+for (const card of SPEC.cards) {
+  const rows = DATA[card.query];
+  const el = document.createElement('div');
+  el.className = 'card w' + (card.width || 6);
+  const h = document.createElement('h2'); h.textContent = card.title; el.appendChild(h);
+  if (card.desc) { const d = document.createElement('p'); d.className = 'desc'; d.textContent = card.desc; el.appendChild(d); }
+
+  if (card.type === 'table') {
+    const wrap = document.createElement('div');
+    wrap.className = card.scroll === false ? '' : 'scroll';
+    const t = document.createElement('table');
+    const thead = document.createElement('thead');
+    const htr = document.createElement('tr');
+    for (const c of card.columns) {
+      const th = document.createElement('th');
+      th.textContent = c.label;
+      if (c.unit || c.numeric) th.className = 'num';
+      htr.appendChild(th);
+    }
+    thead.appendChild(htr); t.appendChild(thead);
+    const tb = document.createElement('tbody');
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      for (const c of card.columns) {
+        const td = document.createElement('td');
+        if (c.unit || c.numeric) td.className = 'num';
+        if (c.pill) {
+          const sp = document.createElement('span');
+          sp.className = 'pill ' + (card.pillMap && card.pillMap[r[c.field]] ? card.pillMap[r[c.field]] : 'warn');
+          sp.textContent = r[c.field];
+          td.appendChild(sp);
+        } else {
+          td.textContent = fmt(r[c.field], c.unit);
+        }
+        tr.appendChild(td);
+      }
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb); wrap.appendChild(t); el.appendChild(wrap);
+    grid.appendChild(el);
+    continue;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap' + (card.tall ? ' tall' : '');
+  const cv = document.createElement('canvas');
+  wrap.appendChild(cv); el.appendChild(wrap); grid.appendChild(el);
+
+  const labels = rows.map(r => r[card.label_field]);
+  let cfg;
+
+  if (card.type === 'scatter') {
+    cfg = {
+      type: 'scatter',
+      data: { datasets: rows.map((r, i) => ({
+        label: String(r[card.label_field]),
+        data: [{x: r[card.x], y: r[card.y]}],
+        backgroundColor: PALETTE[i % PALETTE.length],
+        pointRadius: 8, pointHoverRadius: 10
+      })) },
+      options: {
+        scales: {
+          x: { title: {display: true, text: card.x_title}, grid: {color: '#222a34'} },
+          y: { title: {display: true, text: card.y_title}, grid: {color: '#222a34'} }
+        }
+      }
+    };
+  } else if (card.type === 'doughnut') {
+    cfg = {
+      type: 'doughnut',
+      data: { labels, datasets: [{
+        data: rows.map(r => r[card.series[0].field]),
+        backgroundColor: PALETTE, borderColor: '#171d24', borderWidth: 2
+      }] },
+      options: { cutout: '58%', plugins: { legend: { position: 'right' } } }
+    };
+  } else {
+    const horizontal = card.type === 'hbar';
+    cfg = {
+      type: card.type === 'line' ? 'line' : 'bar',
+      data: { labels, datasets: card.series.map((s, i) => ({
+        label: s.label,
+        data: rows.map(r => r[s.field]),
+        type: s.as === 'line' ? 'line' : undefined,
+        backgroundColor: colourFor(i, s),
+        borderColor: colourFor(i, s),
+        borderWidth: s.as === 'line' || card.type === 'line' ? 2 : 0,
+        borderRadius: s.as === 'line' || card.type === 'line' ? 0 : 3,
+        tension: 0.28,
+        pointRadius: 3,
+        fill: false,
+        yAxisID: s.axis === 'right' ? 'y1' : 'y',
+        order: s.as === 'line' ? 0 : 1
+      })) },
+      options: {
+        indexAxis: horizontal ? 'y' : 'x',
+        plugins: { legend: { display: card.series.length > 1 } },
+        scales: {
+          x: { grid: { color: horizontal ? '#222a34' : 'transparent' },
+               ticks: { autoSkip: false, maxRotation: card.rotate || 0 },
+               stacked: !!card.stacked },
+          y: { grid: { color: horizontal ? 'transparent' : '#222a34' },
+               beginAtZero: card.beginAtZero !== false,
+               stacked: !!card.stacked,
+               title: card.y_title ? {display: true, text: card.y_title} : undefined },
+          ...(card.series.some(s => s.axis === 'right') ? { y1: {
+            position: 'right', grid: {drawOnChartArea: false}, beginAtZero: true,
+            title: card.y1_title ? {display: true, text: card.y1_title} : undefined
+          } } : {})
+        }
+      }
+    };
+  }
+
+  if (card.reference) {
+    const v = card.reference.value;
+    cfg.options.plugins = cfg.options.plugins || {};
+    const label = card.reference.label;
+    cfg.plugins = [{
+      id: 'refline-' + card.title,
+      afterDraw(chart) {
+        const {ctx, chartArea, scales} = chart;
+        const horizontal = card.type === 'hbar';
+        const sc = horizontal ? scales.x : scales.y;
+        const p = sc.getPixelForValue(v);
+        ctx.save();
+        ctx.strokeStyle = '#e0a33e'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (horizontal) { ctx.moveTo(p, chartArea.top); ctx.lineTo(p, chartArea.bottom); }
+        else { ctx.moveTo(chartArea.left, p); ctx.lineTo(chartArea.right, p); }
+        ctx.stroke();
+        ctx.setLineDash([]); ctx.fillStyle = '#e0a33e'; ctx.font = '600 11px ' + FONT;
+        if (horizontal) { ctx.textAlign = 'center'; ctx.fillText(label, p, chartArea.top - 4); }
+        else { ctx.textAlign = 'right'; ctx.fillText(label, chartArea.right - 2, p - 5); }
+        ctx.restore();
+      }
+    }];
+  }
+
+  new Chart(cv, cfg);
+}
+</script>
+</body>
+</html>
