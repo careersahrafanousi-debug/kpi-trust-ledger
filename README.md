@@ -11,6 +11,48 @@ cannot drift away from the analysis in [`sql/`](sql/) — regenerate it with
 `python src/load_sqlite.py && python src/build_dashboard.py`. Chosen over a `.pbix`
 because a reviewer can open a URL and cannot open a binary.
 
+## Built in four tools, from one set of queries
+
+The 13 SQL queries in [`dashboard/dashboard_config.json`](dashboard/dashboard_config.json)
+are the single definition of every number in this repository.
+[`src/build_bi_assets.py`](src/build_bi_assets.py) runs them once and emits every
+artifact below, so none of them can disagree with each other or with
+[`sql/`](sql/). Change a query, rerun, and all four change together.
+
+| Folder | What is in it | Open it with |
+|---|---|---|
+| [`dashboard/`](dashboard/) | Interactive HTML dashboard, [live here](https://careersahrafanousi-debug.github.io/kpi-trust-ledger/dashboard/) | Any browser, nothing to install |
+| [`excel/`](excel/) | `kpi-trust-ledger_dashboard.xlsx` — native Excel charts over `q_*` query sheets | Excel, LibreOffice, Sheets |
+| [`tableau/`](tableau/) | `kpi-trust-ledger.twb` — Tableau workbook as reviewable XML | Tableau Desktop or Public |
+| [`powerbi/`](powerbi/) | Semantic model in TMDL (16 files) and TMSL, plus 18 DAX measures | Power BI Desktop, Tabular Editor |
+| [`charts/`](charts/) | Static PNG renders of the headline findings | Nothing — they are below |
+| [`bi_extracts/`](bi_extracts/) | 13 tidy CSV outputs, the shared source for Tableau and Power BI | Anything |
+
+Rebuild everything:
+
+```
+python src/generate_data.py
+python src/load_sqlite.py
+python src/build_dashboard.py
+python src/build_bi_assets.py
+```
+
+No `.pbix`, `.twbx`, or other binary workbook is committed anywhere. They cannot
+be diffed, reviewed in a pull request, or opened without a licence, and they
+carry a second copy of the data that drifts away from `data/`. The text formats
+above give the same result and stay reviewable. Each folder's `README.md`
+explains its own trade-offs, including what has and has not been round-tripped
+through the vendor tool.
+
+### Headline charts
+
+![backlog](charts/backlog.png)
+
+![by source](charts/by_source.png)
+
+![cert chart](charts/cert_chart.png)
+
+
 
 Three dashboards at Lone Star Care Operations report three different backlog figures. Nobody
 can explain the gap, so leadership has stopped trusting all three. This project builds the
