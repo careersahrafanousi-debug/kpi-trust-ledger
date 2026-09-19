@@ -1,0 +1,42 @@
+table variance
+
+	column pair
+		dataType: string
+		summarizeBy: none
+		sourceColumn: pair
+
+	column variance
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: variance
+
+	column Tolerance
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Tolerance
+
+	column Within_Tolerance
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Within_Tolerance
+
+	measure 'Variance from certified value (variance)' = SUM ( 'variance'[variance] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Variance from certified value for the 'Largest variances' visual.
+
+	partition variance = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\variance.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"pair", type text},
+				        {"variance", type number},
+				        {"Tolerance", type number},
+				        {"Within_Tolerance", type text}
+				    })
+				in
+				    Typed

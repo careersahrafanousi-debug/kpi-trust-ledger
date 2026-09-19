@@ -1,0 +1,73 @@
+table recon
+
+	column KPI_ID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: KPI_ID
+
+	column KPI_Name
+		dataType: string
+		summarizeBy: none
+		sourceColumn: KPI_Name
+
+	column Source
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Source
+
+	column Source_Value
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Source_Value
+
+	column Certified_Value
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Certified_Value
+
+	column Variance
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Variance
+
+	column Unit
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column Tolerance
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Tolerance
+
+	column Within_Tolerance
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Within_Tolerance
+
+	column Note
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Note
+
+	partition recon = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\recon.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"KPI_ID", type text},
+				        {"KPI_Name", type text},
+				        {"Source", type text},
+				        {"Source_Value", type number},
+				        {"Certified_Value", type number},
+				        {"Variance", type number},
+				        {"Unit", type text},
+				        {"Tolerance", type number},
+				        {"Within_Tolerance", type text},
+				        {"Note", type text}
+				    })
+				in
+				    Typed

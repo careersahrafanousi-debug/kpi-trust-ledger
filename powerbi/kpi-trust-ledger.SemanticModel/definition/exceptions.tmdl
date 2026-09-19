@@ -1,0 +1,37 @@
+table exceptions
+
+	column Rule_ID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Rule_ID
+
+	column Severity
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Severity
+
+	column exceptions
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: exceptions
+
+	column still_open
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: still_open
+
+	partition exceptions = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\exceptions.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"Rule_ID", type text},
+				        {"Severity", type text},
+				        {"exceptions", Int64.Type},
+				        {"still_open", Int64.Type}
+				    })
+				in
+				    Typed

@@ -1,0 +1,7 @@
+expression ExtractFolder = "..\..\bi_extracts" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: extract-folder-parameter
+
+	annotation PBI_ResultType = Text
+
+	/// Folder holding the CSV extracts written by src/build_bi_assets.py.
+	/// Point this at the absolute path of bi_extracts/ after cloning.

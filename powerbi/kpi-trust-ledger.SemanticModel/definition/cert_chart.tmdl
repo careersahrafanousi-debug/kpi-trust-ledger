@@ -1,0 +1,41 @@
+table cert_chart
+
+	column kpi
+		dataType: string
+		summarizeBy: none
+		sourceColumn: kpi
+
+	column agreed
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: agreed
+
+	column disagreed
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: disagreed
+
+	measure 'Sources within tolerance (cert_chart)' = SUM ( 'cert_chart'[agreed] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Sources within tolerance for the 'How many sources agree, per KPI' visual.
+
+	measure 'Sources outside tolerance (cert_chart)' = SUM ( 'cert_chart'[disagreed] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Sources outside tolerance for the 'How many sources agree, per KPI' visual.
+
+	partition cert_chart = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\cert_chart.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"kpi", type text},
+				        {"agreed", Int64.Type},
+				        {"disagreed", Int64.Type}
+				    })
+				in
+				    Typed

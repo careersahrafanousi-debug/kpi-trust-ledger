@@ -1,0 +1,58 @@
+table vol
+
+	column reporting_rows
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: reporting_rows
+
+	column cm_rows
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: cm_rows
+
+	column wt_rows
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: wt_rows
+
+	column lr_rows
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: lr_rows
+
+	column exceptions
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: exceptions
+
+	measure 'Reporting layer rows' = SELECTEDVALUE ( 'vol'[reporting_rows] )
+		formatString: #,0
+		displayFolder: Measures
+		/// Reporting layer rows from the vol query extract.
+
+	measure 'Case management rows' = SELECTEDVALUE ( 'vol'[cm_rows] )
+		formatString: #,0
+		displayFolder: Measures
+		/// Same period, 58 more appeals than the certified layer
+
+	measure 'DQ exceptions' = SELECTEDVALUE ( 'vol'[exceptions] )
+		formatString: #,0
+		displayFolder: Measures
+		/// 1 Critical, 213 High
+
+	partition vol = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\vol.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"reporting_rows", Int64.Type},
+				        {"cm_rows", Int64.Type},
+				        {"wt_rows", Int64.Type},
+				        {"lr_rows", Int64.Type},
+				        {"exceptions", Int64.Type}
+				    })
+				in
+				    Typed

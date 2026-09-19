@@ -1,0 +1,30 @@
+table row_counts
+
+	column source
+		dataType: string
+		summarizeBy: none
+		sourceColumn: source
+
+	column rows_present
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: rows_present
+
+	measure 'Rows in source (row_counts)' = SUM ( 'row_counts'[rows_present] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Rows in source for the 'Row counts by source' visual.
+
+	partition row_counts = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\row_counts.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"source", type text},
+				        {"rows_present", Int64.Type}
+				    })
+				in
+				    Typed

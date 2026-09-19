@@ -1,0 +1,30 @@
+table severity
+
+	column Severity
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Severity
+
+	column exceptions
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: exceptions
+
+	measure 'Exceptions (severity)' = SUM ( 'severity'[exceptions] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Exceptions for the 'Exceptions by severity' visual.
+
+	partition severity = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\severity.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"Severity", type text},
+				        {"exceptions", Int64.Type}
+				    })
+				in
+				    Typed

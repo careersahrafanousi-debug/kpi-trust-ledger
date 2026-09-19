@@ -1,0 +1,42 @@
+table by_source
+
+	column Source
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Source
+
+	column pairs
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: pairs
+
+	column agreed
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: agreed
+
+	column recon_pct
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: recon_pct
+
+	measure 'Within tolerance % (by_source)' = AVERAGE ( 'by_source'[recon_pct] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Within tolerance % for the 'Reconciliation rate by source' visual.
+
+	partition by_source = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\by_source.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"Source", type text},
+				        {"pairs", Int64.Type},
+				        {"agreed", Int64.Type},
+				        {"recon_pct", type number}
+				    })
+				in
+				    Typed

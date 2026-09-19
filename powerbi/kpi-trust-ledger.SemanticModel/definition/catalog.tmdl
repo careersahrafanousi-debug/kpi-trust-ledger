@@ -1,0 +1,55 @@
+table catalog
+
+	column KPI_ID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: KPI_ID
+
+	column KPI_Name
+		dataType: string
+		summarizeBy: none
+		sourceColumn: KPI_Name
+
+	column Business_Definition
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Business_Definition
+
+	column Formula
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Formula
+
+	column Authoritative_Source
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Authoritative_Source
+
+	column Unit
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column Tolerance
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Tolerance
+
+	partition catalog = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\catalog.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"KPI_ID", type text},
+				        {"KPI_Name", type text},
+				        {"Business_Definition", type text},
+				        {"Formula", type text},
+				        {"Authoritative_Source", type text},
+				        {"Unit", type text},
+				        {"Tolerance", type text}
+				    })
+				in
+				    Typed

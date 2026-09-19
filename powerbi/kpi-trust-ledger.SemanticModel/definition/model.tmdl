@@ -1,0 +1,25 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["headline", "vol", "certification", "cert_chart", "recon", "by_source", "backlog", "variance", "exceptions", "severity", "catalog", "row_counts", "monthly"]
+
+ref table headline
+ref table vol
+ref table certification
+ref table cert_chart
+ref table recon
+ref table by_source
+ref table backlog
+ref table variance
+ref table exceptions
+ref table severity
+ref table catalog
+ref table row_counts
+ref table monthly
+
+ref expression ExtractFolder

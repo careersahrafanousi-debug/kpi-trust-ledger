@@ -1,0 +1,61 @@
+table certification
+
+	column KPI_ID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: KPI_ID
+
+	column KPI_Name
+		dataType: string
+		summarizeBy: none
+		sourceColumn: KPI_Name
+
+	column Certified_Value
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Certified_Value
+
+	column Unit
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column Sources_Tested
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: Sources_Tested
+
+	column Sources_Within_Tolerance
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: Sources_Within_Tolerance
+
+	column Certified
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Certified
+
+	column Blocking_Reason
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Blocking_Reason
+
+	partition certification = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\certification.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"KPI_ID", type text},
+				        {"KPI_Name", type text},
+				        {"Certified_Value", type number},
+				        {"Unit", type text},
+				        {"Sources_Tested", Int64.Type},
+				        {"Sources_Within_Tolerance", Int64.Type},
+				        {"Certified", type text},
+				        {"Blocking_Reason", type text}
+				    })
+				in
+				    Typed

@@ -1,0 +1,710 @@
+{
+  "name": "kpi-trust-ledger",
+  "compatibilityLevel": 1567,
+  "model": {
+    "culture": "en-US",
+    "dataAccessOptions": {
+      "legacyRedirects": true,
+      "returnErrorValuesAsNull": true
+    },
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "sourceQueryCulture": "en-US",
+    "tables": [
+      {
+        "name": "headline",
+        "columns": [
+          {
+            "name": "kpis",
+            "dataType": "int64",
+            "sourceColumn": "kpis",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "certified",
+            "dataType": "int64",
+            "sourceColumn": "certified",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "pairs_tested",
+            "dataType": "int64",
+            "sourceColumn": "pairs_tested",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "pairs_agreed",
+            "dataType": "int64",
+            "sourceColumn": "pairs_agreed",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "recon_rate",
+            "dataType": "double",
+            "sourceColumn": "recon_rate",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "not_testable",
+            "dataType": "int64",
+            "sourceColumn": "not_testable",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "headline",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\headline.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "KPIs in catalogue",
+            "expression": "SELECTEDVALUE ( 'headline'[kpis] )",
+            "formatString": "#,0",
+            "description": "KPIs in catalogue from the headline query extract."
+          },
+          {
+            "name": "KPIs certified",
+            "expression": "SELECTEDVALUE ( 'headline'[certified] )",
+            "formatString": "#,0",
+            "description": "of 6 \u2014 the rest cannot be quoted"
+          },
+          {
+            "name": "Reconciliation rate",
+            "expression": "SELECTEDVALUE ( 'headline'[recon_rate] )",
+            "formatString": "0.00\"%\"",
+            "description": "13 testable KPI-source pairs"
+          },
+          {
+            "name": "Pairs in agreement",
+            "expression": "SELECTEDVALUE ( 'headline'[pairs_agreed] )",
+            "formatString": "#,0",
+            "description": "of 13 testable"
+          },
+          {
+            "name": "Pairs not testable",
+            "expression": "SELECTEDVALUE ( 'headline'[not_testable] )",
+            "formatString": "#,0",
+            "description": "Source does not carry the field \u2014 neither pass nor fail"
+          }
+        ]
+      },
+      {
+        "name": "vol",
+        "columns": [
+          {
+            "name": "reporting_rows",
+            "dataType": "int64",
+            "sourceColumn": "reporting_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "cm_rows",
+            "dataType": "int64",
+            "sourceColumn": "cm_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "wt_rows",
+            "dataType": "int64",
+            "sourceColumn": "wt_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "lr_rows",
+            "dataType": "int64",
+            "sourceColumn": "lr_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "exceptions",
+            "dataType": "int64",
+            "sourceColumn": "exceptions",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "vol",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\vol.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Reporting layer rows",
+            "expression": "SELECTEDVALUE ( 'vol'[reporting_rows] )",
+            "formatString": "#,0",
+            "description": "Reporting layer rows from the vol query extract."
+          },
+          {
+            "name": "Case management rows",
+            "expression": "SELECTEDVALUE ( 'vol'[cm_rows] )",
+            "formatString": "#,0",
+            "description": "Same period, 58 more appeals than the certified layer"
+          },
+          {
+            "name": "DQ exceptions",
+            "expression": "SELECTEDVALUE ( 'vol'[exceptions] )",
+            "formatString": "#,0",
+            "description": "1 Critical, 213 High"
+          }
+        ]
+      },
+      {
+        "name": "certification",
+        "columns": [
+          {
+            "name": "KPI_ID",
+            "dataType": "string",
+            "sourceColumn": "KPI_ID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "KPI_Name",
+            "dataType": "string",
+            "sourceColumn": "KPI_Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Certified_Value",
+            "dataType": "double",
+            "sourceColumn": "Certified_Value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Unit",
+            "dataType": "string",
+            "sourceColumn": "Unit",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sources_Tested",
+            "dataType": "int64",
+            "sourceColumn": "Sources_Tested",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Sources_Within_Tolerance",
+            "dataType": "int64",
+            "sourceColumn": "Sources_Within_Tolerance",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Certified",
+            "dataType": "string",
+            "sourceColumn": "Certified",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Blocking_Reason",
+            "dataType": "string",
+            "sourceColumn": "Blocking_Reason",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "certification",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\certification.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ]
+      },
+      {
+        "name": "cert_chart",
+        "columns": [
+          {
+            "name": "kpi",
+            "dataType": "string",
+            "sourceColumn": "kpi",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "agreed",
+            "dataType": "int64",
+            "sourceColumn": "agreed",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "disagreed",
+            "dataType": "int64",
+            "sourceColumn": "disagreed",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "cert_chart",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\cert_chart.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Sources within tolerance (cert_chart)",
+            "expression": "SUM ( 'cert_chart'[agreed] )",
+            "formatString": "#,0.00",
+            "description": "Sources within tolerance for the 'How many sources agree, per KPI' visual."
+          },
+          {
+            "name": "Sources outside tolerance (cert_chart)",
+            "expression": "SUM ( 'cert_chart'[disagreed] )",
+            "formatString": "#,0.00",
+            "description": "Sources outside tolerance for the 'How many sources agree, per KPI' visual."
+          }
+        ]
+      },
+      {
+        "name": "recon",
+        "columns": [
+          {
+            "name": "KPI_ID",
+            "dataType": "string",
+            "sourceColumn": "KPI_ID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "KPI_Name",
+            "dataType": "string",
+            "sourceColumn": "KPI_Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Source",
+            "dataType": "string",
+            "sourceColumn": "Source",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Source_Value",
+            "dataType": "double",
+            "sourceColumn": "Source_Value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Certified_Value",
+            "dataType": "double",
+            "sourceColumn": "Certified_Value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Variance",
+            "dataType": "double",
+            "sourceColumn": "Variance",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Unit",
+            "dataType": "string",
+            "sourceColumn": "Unit",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Tolerance",
+            "dataType": "double",
+            "sourceColumn": "Tolerance",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Within_Tolerance",
+            "dataType": "string",
+            "sourceColumn": "Within_Tolerance",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Note",
+            "dataType": "string",
+            "sourceColumn": "Note",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "recon",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\recon.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ]
+      },
+      {
+        "name": "by_source",
+        "columns": [
+          {
+            "name": "Source",
+            "dataType": "string",
+            "sourceColumn": "Source",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "pairs",
+            "dataType": "int64",
+            "sourceColumn": "pairs",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "agreed",
+            "dataType": "int64",
+            "sourceColumn": "agreed",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "recon_pct",
+            "dataType": "double",
+            "sourceColumn": "recon_pct",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "by_source",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\by_source.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Within tolerance % (by_source)",
+            "expression": "AVERAGE ( 'by_source'[recon_pct] )",
+            "formatString": "#,0.00",
+            "description": "Within tolerance % for the 'Reconciliation rate by source' visual."
+          }
+        ]
+      },
+      {
+        "name": "backlog",
+        "columns": [
+          {
+            "name": "source",
+            "dataType": "string",
+            "sourceColumn": "source",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "backlog",
+            "dataType": "int64",
+            "sourceColumn": "backlog",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "backlog",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\backlog.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Open appeals reported (backlog)",
+            "expression": "SUM ( 'backlog'[backlog] )",
+            "formatString": "#,0.00",
+            "description": "Open appeals reported for the 'One question, four answers' visual."
+          }
+        ]
+      },
+      {
+        "name": "variance",
+        "columns": [
+          {
+            "name": "pair",
+            "dataType": "string",
+            "sourceColumn": "pair",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "variance",
+            "dataType": "double",
+            "sourceColumn": "variance",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Tolerance",
+            "dataType": "double",
+            "sourceColumn": "Tolerance",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Within_Tolerance",
+            "dataType": "string",
+            "sourceColumn": "Within_Tolerance",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "variance",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\variance.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Variance from certified value (variance)",
+            "expression": "SUM ( 'variance'[variance] )",
+            "formatString": "#,0.00",
+            "description": "Variance from certified value for the 'Largest variances' visual."
+          }
+        ]
+      },
+      {
+        "name": "exceptions",
+        "columns": [
+          {
+            "name": "Rule_ID",
+            "dataType": "string",
+            "sourceColumn": "Rule_ID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Severity",
+            "dataType": "string",
+            "sourceColumn": "Severity",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "exceptions",
+            "dataType": "int64",
+            "sourceColumn": "exceptions",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "still_open",
+            "dataType": "int64",
+            "sourceColumn": "still_open",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "exceptions",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\exceptions.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ]
+      },
+      {
+        "name": "severity",
+        "columns": [
+          {
+            "name": "Severity",
+            "dataType": "string",
+            "sourceColumn": "Severity",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "exceptions",
+            "dataType": "int64",
+            "sourceColumn": "exceptions",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "severity",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\severity.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Exceptions (severity)",
+            "expression": "SUM ( 'severity'[exceptions] )",
+            "formatString": "#,0.00",
+            "description": "Exceptions for the 'Exceptions by severity' visual."
+          }
+        ]
+      },
+      {
+        "name": "catalog",
+        "columns": [
+          {
+            "name": "KPI_ID",
+            "dataType": "string",
+            "sourceColumn": "KPI_ID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "KPI_Name",
+            "dataType": "string",
+            "sourceColumn": "KPI_Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Business_Definition",
+            "dataType": "string",
+            "sourceColumn": "Business_Definition",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Formula",
+            "dataType": "string",
+            "sourceColumn": "Formula",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Authoritative_Source",
+            "dataType": "string",
+            "sourceColumn": "Authoritative_Source",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Unit",
+            "dataType": "string",
+            "sourceColumn": "Unit",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Tolerance",
+            "dataType": "string",
+            "sourceColumn": "Tolerance",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "catalog",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\catalog.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ]
+      },
+      {
+        "name": "row_counts",
+        "columns": [
+          {
+            "name": "source",
+            "dataType": "string",
+            "sourceColumn": "source",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "rows_present",
+            "dataType": "int64",
+            "sourceColumn": "rows_present",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "row_counts",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\row_counts.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Rows in source (row_counts)",
+            "expression": "SUM ( 'row_counts'[rows_present] )",
+            "formatString": "#,0.00",
+            "description": "Rows in source for the 'Row counts by source' visual."
+          }
+        ]
+      },
+      {
+        "name": "monthly",
+        "columns": [
+          {
+            "name": "month",
+            "dataType": "string",
+            "sourceColumn": "month",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "received",
+            "dataType": "int64",
+            "sourceColumn": "received",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "still_open",
+            "dataType": "int64",
+            "sourceColumn": "still_open",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "sla_pct",
+            "dataType": "double",
+            "sourceColumn": "sla_pct",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "monthly",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": "Csv.Document(File.Contents(ExtractFolder & \"\\monthly.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Appeals received (monthly)",
+            "expression": "SUM ( 'monthly'[received] )",
+            "formatString": "#,0.00",
+            "description": "Appeals received for the 'Certified reporting layer over time' visual."
+          },
+          {
+            "name": "Still open (monthly)",
+            "expression": "SUM ( 'monthly'[still_open] )",
+            "formatString": "#,0.00",
+            "description": "Still open for the 'Certified reporting layer over time' visual."
+          },
+          {
+            "name": "SLA compliance % (monthly)",
+            "expression": "AVERAGE ( 'monthly'[sla_pct] )",
+            "formatString": "#,0.00",
+            "description": "SLA compliance % for the 'Certified reporting layer over time' visual."
+          }
+        ]
+      }
+    ],
+    "expressions": [
+      {
+        "name": "ExtractFolder",
+        "kind": "m",
+        "expression": "\"..\\..\\bi_extracts\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]",
+        "description": "Folder holding the CSV extracts written by src/build_bi_assets.py."
+      }
+    ]
+  }
+}

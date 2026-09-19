@@ -1,0 +1,52 @@
+table monthly
+
+	column month
+		dataType: string
+		summarizeBy: none
+		sourceColumn: month
+
+	column received
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: received
+
+	column still_open
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: still_open
+
+	column sla_pct
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: sla_pct
+
+	measure 'Appeals received (monthly)' = SUM ( 'monthly'[received] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Appeals received for the 'Certified reporting layer over time' visual.
+
+	measure 'Still open (monthly)' = SUM ( 'monthly'[still_open] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// Still open for the 'Certified reporting layer over time' visual.
+
+	measure 'SLA compliance % (monthly)' = AVERAGE ( 'monthly'[sla_pct] )
+		formatString: #,0.00
+		displayFolder: Measures
+		/// SLA compliance % for the 'Certified reporting layer over time' visual.
+
+	partition monthly = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\monthly.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"month", type text},
+				        {"received", Int64.Type},
+				        {"still_open", Int64.Type},
+				        {"sla_pct", type number}
+				    })
+				in
+				    Typed

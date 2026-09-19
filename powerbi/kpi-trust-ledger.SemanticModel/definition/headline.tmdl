@@ -1,0 +1,74 @@
+table headline
+
+	column kpis
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: kpis
+
+	column certified
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: certified
+
+	column pairs_tested
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: pairs_tested
+
+	column pairs_agreed
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: pairs_agreed
+
+	column recon_rate
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: recon_rate
+
+	column not_testable
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: not_testable
+
+	measure 'KPIs in catalogue' = SELECTEDVALUE ( 'headline'[kpis] )
+		formatString: #,0
+		displayFolder: Measures
+		/// KPIs in catalogue from the headline query extract.
+
+	measure 'KPIs certified' = SELECTEDVALUE ( 'headline'[certified] )
+		formatString: #,0
+		displayFolder: Measures
+		/// of 6 — the rest cannot be quoted
+
+	measure 'Reconciliation rate' = SELECTEDVALUE ( 'headline'[recon_rate] )
+		formatString: 0.00"%"
+		displayFolder: Measures
+		/// 13 testable KPI-source pairs
+
+	measure 'Pairs in agreement' = SELECTEDVALUE ( 'headline'[pairs_agreed] )
+		formatString: #,0
+		displayFolder: Measures
+		/// of 13 testable
+
+	measure 'Pairs not testable' = SELECTEDVALUE ( 'headline'[not_testable] )
+		formatString: #,0
+		displayFolder: Measures
+		/// Source does not carry the field — neither pass nor fail
+
+	partition headline = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(ExtractFolder & "\headline.csv"),
+				        [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {
+				        {"kpis", Int64.Type},
+				        {"certified", Int64.Type},
+				        {"pairs_tested", Int64.Type},
+				        {"pairs_agreed", Int64.Type},
+				        {"recon_rate", type number},
+				        {"not_testable", Int64.Type}
+				    })
+				in
+				    Typed
