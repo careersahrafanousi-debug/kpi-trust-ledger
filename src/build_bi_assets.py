@@ -298,15 +298,22 @@ def build_excel(cfg: dict, results: dict[str, list[dict]], repo: str) -> Path:
                          titles_from_data=True)
             sub.set_categories(cats)
             for i, ser in enumerate(sub.series):
-                colour = COLOURS.get(defs[i].get("colour"),
-                                     PALETTE[i % len(PALETTE)])
+                raw = str(defs[i].get("colour", ""))
+                colour = (raw[1:].upper() if raw.startswith("#") else
+                          COLOURS.get(raw, PALETTE[i % len(PALETTE)]))
                 if is_line:
                     ser.smooth = False
                     ser.graphicalProperties.line.width = 26000
                     ser.graphicalProperties.line.solidFill = colour
+                elif str(defs[i].get("colour", "")).startswith("rgba(0,0,0,0)"):
+                    ser.graphicalProperties.noFill = True        # waterfall offset
+                    ser.graphicalProperties.line.noFill = True
                 else:
                     ser.graphicalProperties.solidFill = colour
                     ser.graphicalProperties.line.noFill = True
+                if not is_line:
+                    # Absent this flag, LibreOffice draws negative bars upward.
+                    ser.invertIfNegative = False
             # A bar chart whose value axis does not start at zero exaggerates
             # small differences - Excel autoscales to 55-62 on a set of
             # percentages in the high fifties and makes a 4-point spread look
@@ -321,6 +328,13 @@ def build_excel(cfg: dict, results: dict[str, list[dict]], repo: str) -> Path:
                     # of the plot, printing the labels over the bars. Push them
                     # to the low edge instead.
                     sub.x_axis.tickLblPos = "low"
+            # Without an explicit crossing point LibreOffice draws negative
+            # bars upward from zero, as if they were positive.
+            sub.x_axis.crosses = "autoZero"
+            if axis_id is None:
+                sub.y_axis.crosses = "autoZero"
+            if card.get("y_min") is not None:
+                sub.y_axis.scaling.min = card["y_min"]
             if axis_id is not None:
                 sub.y_axis.axId = axis_id
                 sub.y_axis.majorGridlines = None
@@ -430,6 +444,14 @@ def build_charts(cfg: dict, results: dict[str, list[dict]]) -> list[Path]:
         "font.size": 9,
     })
 
+    def col(s, i):
+        c = s.get("colour", "")
+        if c.startswith("rgba(0,0,0,0)"):
+            return (0, 0, 0, 0)
+        if c.startswith("#"):
+            return c
+        return "#" + COLOURS.get(c, PALETTE[i % len(PALETTE)])
+
     for card in chart_cards(cfg)[:6]:
         rows = results[card["query"]]
         labels = [str(r.get(card["label_field"])) for r in rows]
@@ -452,12 +474,21 @@ def build_charts(cfg: dict, results: dict[str, list[dict]]) -> list[Path]:
             ax.set_aspect("equal")
             ax.grid(False)
         elif card["type"] == "line":
+            ax2 = ax.twinx() if any(s.get("axis") == "right" for s in series) else None
             for i, s in enumerate(series):
-                ax.plot(labels, [r.get(s["field"]) for r in rows], marker="o",
-                        ms=4, lw=2, label=s["label"],
-                        color="#" + COLOURS.get(s.get("colour"),
-                                                PALETTE[i % len(PALETTE)]))
-            if len(series) > 1:
+                target = ax2 if (ax2 is not None and s.get("axis") == "right") else ax
+                target.plot(labels, [r.get(s["field"]) for r in rows], marker="o",
+                            ms=4, lw=2, label=s["label"], color=col(s, i))
+            if ax2 is not None:
+                right = [s for s in series if s.get("axis") == "right"]
+                ax2.set_ylabel(card.get("y1_title") or right[0]["label"])
+                ax2.spines["top"].set_visible(False)
+                h1, l1 = ax.get_legend_handles_labels()
+                h2, l2 = ax2.get_legend_handles_labels()
+                ax.legend(h1 + h2, l1 + l2, frameon=False, fontsize=8, loc="lower left",
+                          bbox_to_anchor=(0, 1.0), ncol=len(h1 + h2))
+                ax._twin_legend = True
+            elif len(series) > 1:
                 ax.legend(frameon=False, fontsize=8)
             plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
         elif card["type"] == "hbar":
@@ -466,36 +497,87 @@ def build_charts(cfg: dict, results: dict[str, list[dict]]) -> list[Path]:
             for i, s in enumerate(series):
                 ax.barh([p + i * width for p in pos],
                         [r.get(s["field"]) or 0 for r in rows], height=width,
-                        label=s["label"],
-                        color="#" + COLOURS.get(s.get("colour"),
-                                                PALETTE[i % len(PALETTE)]))
+                        label=s["label"], color=col(s, i))
             ax.set_yticks([p + 0.4 - width / 2 for p in pos])
             ax.set_yticklabels(labels, fontsize=8)
             ax.invert_yaxis()
             if len(series) > 1:
                 ax.legend(frameon=False, fontsize=8)
-        else:
-            width = 0.8 / len(series)
-            pos = range(len(labels))
+        elif card.get("stacked"):
+            pos = list(range(len(labels)))
+            bottom = [0.0] * len(labels)
             for i, s in enumerate(series):
-                ax.bar([p + i * width for p in pos],
-                       [r.get(s["field"]) or 0 for r in rows], width=width,
-                       label=s["label"],
-                       color="#" + COLOURS.get(s.get("colour"),
-                                               PALETTE[i % len(PALETTE)]))
+                vals = [r.get(s["field"]) or 0 for r in rows]
+                ax.bar(pos, vals, bottom=bottom, width=0.7, color=col(s, i),
+                       label=None if s["label"].startswith("(") else s["label"])
+                bottom = [b + v for b, v in zip(bottom, vals)]
+            ax.set_xticks(pos)
+            ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
+            ax.legend(frameon=False, fontsize=8)
+        else:
+            bars = [s for s in series if s.get("as") != "line"] or series
+            width = 0.8 / len(bars)
+            pos = range(len(labels))
+            # Series flagged axis="right" (a rate beside a count) get their own
+            # scale; on one shared axis they flatten into a line along zero.
+            ax2 = ax.twinx() if any(s.get("axis") == "right" for s in series) else None
+            for i, s in enumerate(series):
+                target = ax2 if (ax2 is not None and s.get("axis") == "right") else ax
+                vals = [r.get(s["field"]) or 0 for r in rows]
+                if s.get("as") == "line":
+                    target.plot([p + 0.4 - width / 2 for p in pos], vals, marker="o",
+                                ms=4, lw=2, label=s["label"], color=col(s, i), zorder=3)
+                else:
+                    b = bars.index(s)
+                    target.bar([p + b * width for p in pos], vals, width=width,
+                               label=s["label"], color=col(s, i))
+            if ax2 is not None:
+                # Whichever axis carries the lines sits on top; gridlines live on
+                # the bottom axis only so they never cut across the bars.
+                left_lines = any(s.get("as") == "line" for s in series
+                                 if s.get("axis") != "right")
+                top, bottom_ax = (ax, ax2) if left_lines else (ax2, ax)
+                top.set_zorder(bottom_ax.get_zorder() + 1)
+                top.patch.set_visible(False)
+                ax.grid(False)
+                ax2.grid(False)
+                bottom_ax.grid(axis="y", lw=0.6, alpha=0.6)
+                bottom_ax.set_axisbelow(True)
             ax.set_xticks([p + 0.4 - width / 2 for p in pos])
             ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
-            if len(series) > 1:
+            if ax2 is not None:
+                right = [s for s in series if s.get("axis") == "right"]
+                ax2.set_ylabel(card.get("y1_title") or right[0]["label"])
+                ax2.set_ylim(bottom=0)
+                ax2.spines["top"].set_visible(False)
+                ax2.yaxis.set_major_formatter(FuncFormatter(
+                    lambda v, _: f"{v:,.0f}" if abs(v) >= 1000 else f"{v:g}"))
+                h1, l1 = ax.get_legend_handles_labels()
+                h2, l2 = ax2.get_legend_handles_labels()
+                ax.legend(h1 + h2, l1 + l2, frameon=False, fontsize=8, loc="lower left",
+                          bbox_to_anchor=(0, 1.0), ncol=len(h1 + h2))
+                ax._twin_legend = True
+                if any(s.get("axis") != "right" and s.get("as") != "line" for s in series):
+                    ax.set_ylim(bottom=0)
+                if not card.get("y_title"):
+                    left = [s for s in series if s.get("axis") != "right"]
+                    ax.set_ylabel(left[0]["label"] if len(left) == 1 else "")
+            elif len(series) > 1:
                 ax.legend(frameon=False, fontsize=8)
 
+        if card.get("y_min") is not None:
+            ax.set_ylim(bottom=card["y_min"])
+        if card.get("y_title") and card["type"] != "doughnut":
+            (ax.set_xlabel if card["type"] == "hbar" else ax.set_ylabel)(card["y_title"])
         if card["type"] != "doughnut":
-            ax.yaxis.set_major_formatter(FuncFormatter(
+            (ax.xaxis if card["type"] == "hbar" else ax.yaxis).set_major_formatter(FuncFormatter(
                 lambda v, _: f"{v:,.0f}" if abs(v) >= 1000 else f"{v:g}"))
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
 
         ax.set_title(card["title"], color="#e7edf6", fontsize=11, loc="left",
-                     pad=12, fontweight="bold")
+                     pad=26 if getattr(ax, "_twin_legend", False) else 12,
+                     fontweight="bold")
         fig.tight_layout()
         path = outdir / f"{slug(card['query'])}.png"
         fig.savefig(path, facecolor="#0f172a")
